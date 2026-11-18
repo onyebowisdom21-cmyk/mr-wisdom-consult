@@ -8,7 +8,16 @@ Next.js 16 site with a Supabase-backed public catalog, owner dashboard, contact 
 2. Install dependencies with `npm install`.
 3. Copy `.env.example` to `.env.local` and set the Supabase URL, anon key, service-role key, Google Gemini API key, and site URL. Never expose the service-role or Google API key in `NEXT_PUBLIC_*` variables.
 4. Apply `supabase/schema.sql` in the Supabase SQL Editor.
-5. Create the owner's account in Supabase Auth, then insert that user's UUID into `public.admins`.
+5. Create the owner's account in Supabase Auth, then grant dashboard access by running the SQL below in the Supabase SQL Editor. Replace the placeholder with the exact Auth email:
+
+   ```sql
+   insert into public.admins (user_id)
+   select id from auth.users
+   where lower(email) = lower('YOUR_ADMIN_EMAIL')
+   on conflict (user_id) do nothing;
+   ```
+
+   The email must already exist under **Authentication → Users**. The dashboard is at `/admin/login`; sign in with that account's email and password. Only users in `public.admins` can add, edit or delete catalog content.
 6. Start the development server with `npm run dev`, or build and serve production with `npm run build` and `npm run start`.
 
 The public pages read only published rows. The admin dashboard is available at `/admin/login`; it supports content CRUD and review of contact and chat inquiries.
