@@ -15,7 +15,7 @@ export default function HomePage() {
     
     // Simulate or connect to your AI model endpoint powered by the full site context
     setTimeout(() => {
-      setResponse(AI Assistant Response regarding "": Based on Mr Wisdom Tech Media and Business Consult, we provide expert technology development, business consulting, staff management, full-scale advertising, tech training (30+ courses), media production, a vibrant marketplace, and our "Book Me" expert services.);
+      setResponse(`AI Assistant Response regarding "${prompt}": Based on Mr Wisdom Tech Media and Business Consult, we provide expert technology development, business consulting, staff management, full-scale advertising, tech training (30+ courses), media production, a vibrant marketplace, and our "Book Me" expert services.`);
       setLoading(false);
       setPrompt('');
     }, 1000);

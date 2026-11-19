@@ -9,6 +9,10 @@ export const metadata = {
   },
   description:
     "Practical technology, media and business consulting, alongside a curated hub of opportunities and resources.",
+  icons: { icon: "/icon.jpeg", apple: "/icon.jpeg" },
+  openGraph: {
+    images: [{ url: "/mr-wisdom-logo.jpeg", alt: "Mr Wisdom Tech Media and Business Consult logo" }],
+  },
 };
 
 export default function RootLayout({

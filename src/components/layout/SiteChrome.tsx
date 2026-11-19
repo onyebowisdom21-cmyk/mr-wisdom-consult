@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { publicEnv } from "@/lib/env";
 import { getCurrentYear } from "@/lib/time";
@@ -15,19 +16,19 @@ export function SiteHeader() {
     <header className="site-header">
       <div className="container header-inner">
         <Link className="brand" href="/" aria-label="Mr Wisdom Consult home">
-          <span className="brand-mark" aria-hidden="true">W</span>
+          <Image
+            alt=""
+            className="brand-logo"
+            height={56}
+            priority
+            src="/mr-wisdom-logo.jpeg"
+            width={56}
+          />
           <span>
             Mr Wisdom
             <small>Tech · Media · Business</small>
           </span>
         </Link>
-        <img
-          src="https://fdykbnmoaiglsgcpkipw.supabase.co/storage/v1/object/public/profile-picture/WhatsApp%20Image%202026-11-17%20at%208.29.12%20AM.jpeg"
-          alt="Mr Wisdom profile"
-          className="profile-picture"
-          width={40}
-          height={40}
-        />
         <nav className="main-nav" aria-label="Main navigation">
           {links.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}
           <Link className="button" href="/contact">Let&apos;s talk</Link>
@@ -48,7 +49,13 @@ export async function SiteFooter() {
         <div className="footer-inner">
           <div>
             <Link className="brand" href="/">
-              <span className="brand-mark" aria-hidden="true">W</span>
+              <Image
+                alt=""
+                className="brand-logo"
+                height={64}
+                src="/mr-wisdom-logo.jpeg"
+                width={64}
+              />
               <span>Mr Wisdom<small>Tech · Media · Business</small></span>
             </Link>
             <p>Ideas into practical technology, media and business outcomes.</p>
