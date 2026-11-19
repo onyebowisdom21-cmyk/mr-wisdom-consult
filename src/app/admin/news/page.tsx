@@ -1,3 +1,3 @@
 ﻿export default function NewsSubPage() {
-  return <div style={{ padding: '20px' }}><h2>News & Announcements</h2><p>Manage blog posts and news updates.</p></div>;
+  return <main className="admin-shell"><div className="container"><h1 className="page-title">News & Announcements</h1><p>Manage blog posts and news updates.</p></div></main>;
 }

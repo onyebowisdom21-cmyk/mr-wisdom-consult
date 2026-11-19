@@ -1,3 +1,3 @@
 ﻿export default function ProductsSubPage() {
-  return <div style={{ padding: '20px' }}><h2>Products</h2><p>Manage digital catalog products.</p></div>;
+  return <main className="admin-shell"><div className="container"><h1 className="page-title">Products</h1><p>Manage digital catalog products.</p></div></main>;
 }

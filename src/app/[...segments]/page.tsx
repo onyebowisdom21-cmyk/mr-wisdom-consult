@@ -325,36 +325,45 @@ async function renderRoute(segments: string[]) {
   if (segments.length === 1 && first === "about") {
     return (
       <>
-        <section className="page-hero"><div className="container"><div className="eyebrow">About us</div><h1>Technology, media and business—with purpose.</h1><p>Mr Wisdom Tech Media and Business Consult helps people and organizations turn ideas into practical action.</p></div></section>
-        <section className="section"><div className="container"><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'stretch', width: '100%' }}>
-    <div style={{ background: '#0f172a', color: '#ffffff', padding: '2rem', borderRadius: '12px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 10px 25px rgba(15, 23, 42, 0.18)', border: '2px solid #2563eb' }}>
-      <div>
-        <div style={{ fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#60a5fa', marginBottom: '0.5rem' }}>
-          Community Commerce &amp; Booking
-        </div>
-        <h2 style={{ fontSize: '2rem', fontWeight: 900, letterSpacing: '-0.02em', marginBottom: '0.75rem', color: '#ffffff' }}>
-          MARKETPLACE
-        </h2>
-        <p style={{ fontSize: '0.98rem', color: '#cbd5e1', lineHeight: 1.55, marginBottom: '1.5rem' }}>
-          Browse posted goods and verified services, list your own products for sale, or upload and book expert &ldquo;Book Me&rdquo; services across Nigeria.
-        </p>
-      </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <a href="/marketplace" style={{ background: '#2563eb', color: '#ffffff', padding: '0.8rem 1.25rem', borderRadius: '8px', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
-          Open Marketplace
-        </a>
-        <a href="/marketplace/upload" style={{ background: '#16a34a', color: '#ffffff', padding: '0.8rem 1.25rem', borderRadius: '8px', fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
-          + Post Goods / Book Me
-        </a>
-      </div>
-    </div>
-    <div className="content-body">
-          <h2>Clear thinking. Useful outcomes.</h2>
-          <p>We bring a multidisciplinary perspective to technology, communications and business challenges. Our goal is to make the options clearer and the next step more achievable.</p>
-          <p>Explore our <Link href="/services">consulting services</Link>, browse <Link href="/products">products and resources</Link>, or find a new opportunity in our <Link href="/opportunities">opportunity hub</Link>.</p>
-          <Link className="button" href="/contact">Tell us what you&apos;re working on</Link>
-        </div>
-  </div></div></section>
+        <section className="page-hero">
+          <div className="container">
+            <div className="eyebrow">About us</div>
+            <h1>Technology, media and business—with purpose.</h1>
+            <p>Mr Wisdom Tech Media and Business Consult helps people and organizations turn ideas into practical action.</p>
+          </div>
+        </section>
+        <section className="section">
+          <div className="container about-highlights">
+            <section className="about-marketplace-card" aria-labelledby="about-marketplace-title">
+              <p className="eyebrow">Community commerce &amp; booking</p>
+              <h2 id="about-marketplace-title">MARKETPLACE</h2>
+              <p>
+                Browse goods and services, post your own listing, or book expert
+                services across Nigeria.
+              </p>
+              <div className="about-actions">
+                <Link className="button marketplace-action-primary" href="/marketplace">View listings</Link>
+                <Link className="button marketplace-action-secondary" href="/marketplace/upload">Post goods</Link>
+                <Link className="button marketplace-action-secondary" href="/services">Book Me</Link>
+              </div>
+            </section>
+            <section className="about-consultancy-card">
+              <p className="eyebrow">How we help</p>
+              <h2>Clear thinking. Useful outcomes.</h2>
+              <p>
+                We bring a multidisciplinary perspective to technology,
+                communications, and business challenges. Our goal is to make the
+                options clearer and the next step more achievable.
+              </p>
+              <p>
+                Explore <Link href="/services">consulting services</Link>,
+                browse <Link href="/products">products and resources</Link>, or
+                find a new opportunity in our <Link href="/opportunities">opportunity hub</Link>.
+              </p>
+              <Link className="button" href="/contact">Tell us what you&apos;re working on</Link>
+            </section>
+          </div>
+        </section>
       </>
     );
   }

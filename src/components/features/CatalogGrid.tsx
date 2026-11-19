@@ -28,8 +28,10 @@ export function CatalogGrid({ items }: { items: CatalogCard[] }) {
       <div className="filter-row">
         <label className="sr-only" htmlFor="catalog-search">Search this catalog</label>
         <input
+          autoComplete="off"
           className="search-input"
           id="catalog-search"
+          name="catalog-search"
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search by keyword…"
           type="search"
@@ -41,7 +43,16 @@ export function CatalogGrid({ items }: { items: CatalogCard[] }) {
         <div className="card-grid">
           {filtered.map((item) => (
             <article className="card" key={item.href}>
-              {item.image && <Image alt="" className="catalog-image" height={360} src={item.image} width={600} />}
+              {item.image && (
+                <Image
+                  alt={item.title}
+                  className="catalog-image"
+                  height={360}
+                  sizes="(max-width: 700px) 90vw, (max-width: 1000px) 45vw, 30vw"
+                  src={item.image}
+                  width={600}
+                />
+              )}
               <div className="card-meta">{item.category}</div>
               <h2><Link href={item.href}>{item.title}</Link></h2>
               <p>{item.summary}</p>

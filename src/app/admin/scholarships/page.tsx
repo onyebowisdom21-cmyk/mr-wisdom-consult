@@ -1,3 +1,3 @@
 ﻿export default function ScholarshipsSubPage() {
-  return <div style={{ padding: '20px' }}><h2>Scholarships</h2><p>Manage scholarship opportunities.</p></div>;
+  return <main className="admin-shell"><div className="container"><h1 className="page-title">Scholarships</h1><p>Manage scholarship opportunities.</p></div></main>;
 }

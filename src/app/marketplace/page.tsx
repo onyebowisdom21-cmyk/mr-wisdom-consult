@@ -1,8 +1,9 @@
-﻿'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
+import Image from "next/image";
+import Link from "next/link";
+import { createClient } from "@supabase/supabase-js";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface Product {
   id: string;
@@ -15,114 +16,269 @@ interface Product {
   created_at: string;
 }
 
+function formatPrice(price: number): string {
+  return `₦${new Intl.NumberFormat("en-NG").format(Number(price) || 0)}`;
+}
+
+function sellerInquiryUrl(product: Product, buyerContact: string): string | null {
+  const sellerContact = product.seller_contact.trim();
+  const message = `Hello, I’m interested in “${product.title}”. My contact is ${buyerContact}.`;
+  if (/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(sellerContact)) {
+    return `mailto:${sellerContact}?subject=${encodeURIComponent(`Marketplace inquiry: ${product.title}`)}&body=${encodeURIComponent(message)}`;
+  }
+  const digits = sellerContact.replace(/\D/g, "");
+  if (digits.length < 8) return null;
+  const whatsappNumber = digits.startsWith("0") ? `234${digits.slice(1)}` : digits;
+  return `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+}
+
 export default function MarketplacePage() {
+  const dialogRef = useRef<HTMLDialogElement>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [query, setQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [buyerContact, setBuyerContact] = useState('');
-  const [messageSent, setMessageSent] = useState(false);
+  const [buyerContact, setBuyerContact] = useState("");
+  const [contactUrl, setContactUrl] = useState<string | null>(null);
+  const [contactError, setContactError] = useState("");
 
   useEffect(() => {
-    async function fetchProducts() {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
-      
-      const { data, error } = await supabase
-        .from('marketplace_items')
-        .select('*')
-        .order('is_admin', { ascending: false })
-        .order('created_at', { ascending: false });
-
-      if (data) setProducts(data);
-      setLoading(false);
-    }
-
-    fetchProducts();
+    setQuery(new URLSearchParams(window.location.search).get("q") ?? "");
   }, []);
 
-  const handleContactSeller = (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessageSent(true);
-    setTimeout(() => {
-      setMessageSent(false);
-      setBuyerContact('');
-      setSelectedProduct(null);
-    }, 3000);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (selectedProduct && dialog && !dialog.open) dialog.showModal();
+    if (!selectedProduct && dialog?.open) dialog.close();
+  }, [selectedProduct]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchProducts() {
+      setLoading(true);
+      setLoadError(false);
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !supabaseKey) {
+          throw new Error("Marketplace data is not configured.");
+        }
+
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        const { data, error } = await supabase
+          .from("marketplace_items")
+          .select("*")
+          .order("is_admin", { ascending: false })
+          .order("created_at", { ascending: false });
+
+        if (error) throw error;
+        if (active) setProducts((data ?? []) as Product[]);
+      } catch (error) {
+        console.error("Unable to load Marketplace listings.", error);
+        if (active) setLoadError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    void fetchProducts();
+    return () => { active = false; };
+  }, [retryCount]);
+
+  const filteredProducts = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase();
+    if (!normalized) return products;
+    return products.filter((product) =>
+      `${product.title} ${product.description}`.toLocaleLowerCase().includes(normalized),
+    );
+  }, [products, query]);
+
+  const handleContactSeller = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!selectedProduct) return;
+    const url = sellerInquiryUrl(selectedProduct, buyerContact.trim());
+    if (!url) {
+      setContactError("We couldn’t create a message link. Please use the seller contact shown above.");
+      return;
+    }
+    setContactError("");
+    setContactUrl(url);
+  };
+
+  const closeInquiry = () => {
+    setSelectedProduct(null);
+    setBuyerContact("");
+    setContactUrl(null);
+    setContactError("");
   };
 
   return (
-    <main className="marketplace-shell" style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <div>
-          <div className="eyebrow" style={{ color: '#2563eb', fontWeight: 600 }}>Mr Wisdom Consult</div>
-          <h1 style={{ fontSize: '2.5rem', fontWeight: 700 }}>Community Marketplace</h1>
-          <p style={{ color: '#6b7280' }}>Discover goods & services from verified admins and trusted users.</p>
+    <main className="marketplace-shell">
+      <div className="container">
+        <header className="marketplace-header">
+          <div className="marketplace-header-copy">
+            <p className="eyebrow">Community commerce &amp; trusted services</p>
+            <h1>Marketplace</h1>
+            <p>Discover goods and services from Mr Wisdom Consult and the community. Browse, connect, and find what you need.</p>
+          </div>
+          <div className="marketplace-header-actions">
+            <Link className="button" href="/marketplace/upload">Post goods / Book Me</Link>
+            <Link className="button secondary" href="/services">Book a service</Link>
+          </div>
+        </header>
+
+        <div className="marketplace-filter">
+          <label htmlFor="marketplace-search">
+            Search listings
+            <input
+              autoComplete="off"
+              id="marketplace-search"
+              name="q"
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search by item or service…"
+              type="search"
+              value={query}
+            />
+          </label>
+          {!loading && !loadError && (
+            <p aria-live="polite">
+              {filteredProducts.length} {filteredProducts.length === 1 ? "listing" : "listings"}
+            </p>
+          )}
         </div>
-        <Link href="/marketplace/upload" className="button primary" style={{ background: '#2563eb', color: '#fff', padding: '0.75rem 1.5rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 600 }}>
-          + Post Your Good / Service
-        </Link>
+
+        {loading ? (
+          <p className="status" role="status">Loading listings…</p>
+        ) : loadError ? (
+          <div className="marketplace-empty" role="alert">
+            <h2>Listings are temporarily unavailable</h2>
+            <p>Please try again. You can still browse services or contact the consultancy.</p>
+            <div className="marketplace-header-actions">
+              <button onClick={() => setRetryCount((count) => count + 1)} type="button">Try again</button>
+              <Link className="button secondary" href="/contact">Contact us</Link>
+            </div>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="marketplace-empty">
+            <h2>{products.length ? "No matching listings" : "Be the first to post"}</h2>
+            <p>
+              {products.length
+                ? "Try another search, or clear the search field to see all listings."
+                : "There are no listings yet. Share a useful good or service with the community."}
+            </p>
+            {products.length ? (
+              <button onClick={() => setQuery("")} type="button">Clear search</button>
+            ) : (
+              <Link className="button" href="/marketplace/upload">Post a listing</Link>
+            )}
+          </div>
+        ) : (
+          <div className="marketplace-grid">
+            {filteredProducts.map((product) => {
+              const images = Array.isArray(product.images) ? product.images : [];
+              const image = images[0];
+              return (
+                <article className="marketplace-card" key={product.id}>
+                  <div className="marketplace-image-frame">
+                    {image ? (
+                      <Image
+                        alt={product.title}
+                        className="marketplace-product-image"
+                        fill
+                        sizes="(max-width: 600px) 48vw, (max-width: 900px) 45vw, 30vw"
+                        src={image}
+                      />
+                    ) : (
+                      <span className="marketplace-image-placeholder">Image not provided</span>
+                    )}
+                    {product.is_admin && <span className="marketplace-badge">Official listing</span>}
+                  </div>
+                  <div className="marketplace-card-content">
+                    <h2>{product.title}</h2>
+                    <p className="marketplace-description">{product.description}</p>
+                    <div className="marketplace-price-row">
+                      <strong className="marketplace-price">{formatPrice(product.price)}</strong>
+                      <span className="marketplace-seller">Seller: {product.seller_contact}</span>
+                    </div>
+                    <button
+                      className="marketplace-card-action"
+                      onClick={() => {
+                        setBuyerContact("");
+                        setContactUrl(null);
+                        setContactError("");
+                        setSelectedProduct(product);
+                      }}
+                      type="button"
+                    >
+                      Buy / contact seller
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {loading ? (
-        <p>Loading marketplace items...</p>
-      ) : products.length === 0 ? (
-        <p style={{ color: '#6b7280', textAlign: 'center', padding: '3rem 0' }}>No items posted in the marketplace yet. Be the first to post!</p>
-      ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-          {products.map((product) => (
-            <div key={product.id} style={{ border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden', background: '#fff', position: 'relative', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-              {product.is_admin && (
-                <span style={{ position: 'absolute', top: '10px', right: '10px', background: '#2563eb', color: '#fff', padding: '0.25rem 0.75rem', fontSize: '0.75rem', borderRadius: '20px', fontWeight: 600, zIndex: 10 }}>
-                  Admin Featured
-                </span>
-              )}
-              <div style={{ height: '200px', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                {product.images && product.images[0] ? (
-                  <img src={product.images[0]} alt={product.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                ) : (
-                  <span style={{ color: '#9ca3af' }}>No Image Available</span>
-                )}
-              </div>
-              <div style={{ padding: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: '0.5rem' }}>{product.title}</h3>
-                <p style={{ color: '#4b5563', fontSize: '0.95rem', marginBottom: '1rem', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                  <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#16a34a' }}>₦{Number(product.price).toLocaleString()}</span>
-                  <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>Contact: {product.seller_contact}</span>
-                </div>
-                <button onClick={() => setSelectedProduct(product)} style={{ width: '100%', background: '#111827', color: '#fff', padding: '0.75rem', borderRadius: '6px', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
-                  Buy / Drop Contact
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {selectedProduct && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ background: '#fff', padding: '2rem', borderRadius: '12px', width: '100%', maxWidth: '450px' }}>
-            <h2>Interested in "{selectedProduct.title}"?</h2>
-            <p style={{ margin: '1rem 0', color: '#4b5563' }}>Price: ₦{Number(selectedProduct.price).toLocaleString()}</p>
-            <p style={{ fontSize: '0.9rem', color: '#6b7280', marginBottom: '1rem' }}>Seller Contact: <strong>{selectedProduct.seller_contact}</strong></p>
-            
+        <dialog
+          aria-labelledby="marketplace-dialog-title"
+          className="marketplace-modal"
+          onCancel={closeInquiry}
+          onClose={closeInquiry}
+          ref={dialogRef}
+        >
+            <h2 id="marketplace-dialog-title">Interested in “{selectedProduct.title}”?</h2>
+            <p><strong className="marketplace-price">{formatPrice(selectedProduct.price)}</strong></p>
+            <p>Seller contact: <strong>{selectedProduct.seller_contact}</strong></p>
+            {Array.isArray(selectedProduct.images) && selectedProduct.images.length > 0 && (
+              <div className="marketplace-previews">
+                {selectedProduct.images.map((image, index) => (
+                  <Image
+                    alt={`${selectedProduct.title}, photo ${index + 1}`}
+                    height={96}
+                    key={`${image}-${index}`}
+                    sizes="96px"
+                    src={image}
+                    width={96}
+                  />
+                ))}
+              </div>
+            )}
             <form onSubmit={handleContactSeller}>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Drop your phone number/email for the seller:</label>
-              <input type="text" required value={buyerContact} onChange={(e) => setBuyerContact(e.target.value)} placeholder="e.g. +2348000000000" style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #d1d5db', marginBottom: '1rem' }} />
-              
-              {messageSent && (
-                <p style={{ color: '#16a34a', fontWeight: 600, marginBottom: '1rem' }}>Sent successfully! The seller will reach you shortly.</p>
+              <div className="field">
+                <label htmlFor="buyer-contact">Your phone number or email</label>
+                <input
+                  autoComplete="off"
+                  id="buyer-contact"
+                  maxLength={254}
+                  onChange={(event) => {
+                    setBuyerContact(event.target.value);
+                    setContactUrl(null);
+                    setContactError("");
+                  }}
+                  placeholder="e.g. +234 800 000 0000"
+                  required
+                  type="text"
+                  value={buyerContact}
+                />
+              </div>
+              {contactError && <p className="status error" role="alert">{contactError}</p>}
+              {contactUrl && (
+                <p className="status" role="status">
+                  Your inquiry is ready. Review and send it in your messaging app.
+                  {" "}<a href={contactUrl} rel="noopener noreferrer" target="_blank">Open message →</a>
+                </p>
               )}
-
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" style={{ flex: 1, background: '#2563eb', color: '#fff', padding: '0.75rem', borderRadius: '6px', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Submit Contact</button>
-                <button type="button" onClick={() => setSelectedProduct(null)} style={{ flex: 1, background: '#e5e7eb', color: '#1f2937', padding: '0.75rem', borderRadius: '6px', border: 'none', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+              <div className="marketplace-modal-actions">
+                <button disabled={!buyerContact.trim()} type="submit">Prepare message</button>
+                <button className="button secondary" onClick={closeInquiry} type="button">Close</button>
               </div>
             </form>
-          </div>
-        </div>
+        </dialog>
       )}
     </main>
   );

@@ -1,3 +1,3 @@
 ﻿export default function JobsSubPage() {
-  return <div style={{ padding: '20px' }}><h2>Jobs</h2><p>Manage job openings.</p></div>;
+  return <main className="admin-shell"><div className="container"><h1 className="page-title">Jobs</h1><p>Manage job openings.</p></div></main>;
 }
