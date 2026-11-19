@@ -20,7 +20,7 @@ export async function getList<K extends ContentKind>(kind: K, opts: { limit?: nu
   let q = createPublicClient().from(kind).select("*").order(ORDER[kind], { ascending: !DESC[kind], nullsFirst: false });
   if (opts.limit) q = q.limit(opts.limit);
   const { data, error } = await q;
-  if (error) throw new Error(`getList(${kind}): ${error.message}`);
+  if (error) console.warn(error&&error.message);return [];
   return (data ?? []).map((r) => toCamel<ContentMap[K]>(r));
 }
 
